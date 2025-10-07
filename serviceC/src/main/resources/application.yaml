@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: serviceC
+  profiles:
+    default: local
+
+server:
+  address: 0.0.0.0
+  port: 8080
+
+---
+spring:
+  config:
+    active:
+      on-profile: local
+  datasource:
+    url: jdbc:sqlserver://;serverName=localhost;databaseName=master;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=false
+    username: SA
+    password: YourStrong!Passw0rd
+    driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+#logging:
+#  level:
+#    org.springframework.jdbc.support.JdbcTransactionManager: DEBUG

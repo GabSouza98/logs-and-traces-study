@@ -1,6 +1,45 @@
-version: '3.8'
-
 services:
+
+  service-a:
+    build: ./serviceA
+    container_name: service-a
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - service-b
+    networks:
+      - elk-network
+    volumes:
+      - ./logs:/logs   # writes logs here
+
+  service-b:
+    build: ./serviceB
+    container_name: service-b
+    restart: always
+    ports:
+      - "8081:8080"
+    depends_on:
+      - service-c
+    networks:
+      - elk-network
+    volumes:
+      - ./logs:/logs
+
+  service-c:
+    build: ./serviceC
+    container_name: service-c
+    restart: always
+    ports:
+      - "8082:8080"
+    depends_on:
+      - filebeat
+      - logstash
+    networks:
+      - elk-network
+    volumes:
+      - ./logs:/logs
+
   elasticsearch:
     image: elasticsearch:8.17.1
     container_name: elasticsearch
@@ -42,6 +81,24 @@ services:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
     depends_on:
       - elasticsearch
+    networks:
+      - elk-network
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.17.1
+    container_name: filebeat
+    user: root
+    environment:
+      - BEAT_STRICT_PERMS=false
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs:/logs:ro # mount logs, read-only
+      - ./data/filebeat:/usr/share/filebeat/data   # persist registry
+    depends_on:
+      - elasticsearch
+      - logstash
     networks:
       - elk-network
 

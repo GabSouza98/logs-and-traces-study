@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: serviceA
+  profiles:
+    default: local
+
+server:
+  address: 0.0.0.0
+  port: 8080
+
+services:
+  serviceB: http://service-b:8080/v1/trace-service-b
+  serviceC: http://service-c:8080/v1/trace-service-c
+
+#logging:
+#  logstash:
+#    host: logstash
+#    port: 5044
+
+
+---
+spring:
+  config:
+    active:
+      on-profile: local
+  datasource:
+    url: jdbc:sqlserver://;serverName=localhost;databaseName=master;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=false
+    username: SA
+    password: YourStrong!Passw0rd
+    driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+#logging:
+#  level:
+#    org.springframework.jdbc.support.JdbcTransactionManager: DEBUG
