@@ -1,0 +1,41 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+
+exporters:
+  # Jaeger via OTLP
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  otlphttp:
+    endpoint: http://loki:3100/otlp
+
+  otlp/elastic:
+    endpoint: apm-server:8200
+    tls:
+      insecure: true
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/jaeger, otlp/tempo, otlp/elastic]
+
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp, otlp/elastic]

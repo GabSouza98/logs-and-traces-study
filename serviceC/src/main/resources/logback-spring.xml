@@ -30,8 +30,8 @@
     </appender>
 
     <root level="INFO">
-        <appender-ref ref="ECS_FILE" />
         <appender-ref ref="STDOUT" />
+<!--        <appender-ref ref="ECS_FILE" />-->
 <!--        <appender-ref ref="LOGSTASH" />-->
     </root>
 

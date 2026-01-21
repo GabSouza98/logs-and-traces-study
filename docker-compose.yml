@@ -4,6 +4,14 @@ services:
     build: ./serviceA
     container_name: service-a
     restart: always
+    environment:
+      - OTEL_SERVICE_NAME=serviceA
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - JAVA_TOOL_OPTIONS=-javaagent:/serviceA/opentelemetry-javaagent.jar
     ports:
       - "8080:8080"
     depends_on:
@@ -17,6 +25,14 @@ services:
     build: ./serviceB
     container_name: service-b
     restart: always
+    environment:
+      - OTEL_SERVICE_NAME=serviceB
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - JAVA_TOOL_OPTIONS=-javaagent:/serviceB/opentelemetry-javaagent.jar
     ports:
       - "8081:8080"
     depends_on:
@@ -30,10 +46,18 @@ services:
     build: ./serviceC
     container_name: service-c
     restart: always
+    environment:
+      - OTEL_SERVICE_NAME=serviceC
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - JAVA_TOOL_OPTIONS=-javaagent:/serviceC/opentelemetry-javaagent.jar
     ports:
       - "8082:8080"
     depends_on:
-      - filebeat
+      - jaeger
       - logstash
     networks:
       - elk-network
@@ -52,6 +76,25 @@ services:
       - discovery.type=single-node
     ports:
       - '9200:9200'
+    networks:
+      - elk-network
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:8.17.1
+    container_name: apm-server
+    depends_on:
+      - elasticsearch
+    ports:
+      - "8200:8200"   # APM intake (HTTP)
+#      - "4317:4317"   # OTLP gRPC
+#      - "4318:4318"   # OTLP HTTP
+    environment:
+      APM_SERVER_HOST: "0.0.0.0:8200"
+      APM_SERVER_OTLP_ENABLED: "true"
+      APM_SERVER_OTLP_GRPC_ENABLED: "true"
+      APM_SERVER_OTLP_HTTP_ENABLED: "true"
+      OUTPUT_ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+      XPACK_SECURITY_ENABLED: "false"
     networks:
       - elk-network
 
@@ -84,21 +127,74 @@ services:
     networks:
       - elk-network
 
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:8.17.1
-    container_name: filebeat
-    user: root
-    environment:
-      - BEAT_STRICT_PERMS=false
+#  filebeat:
+#    image: docker.elastic.co/beats/filebeat:8.17.1
+#    container_name: filebeat
+#    user: root
+#    environment:
+#      - BEAT_STRICT_PERMS=false
+#    volumes:
+#      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+#      - /var/run/docker.sock:/var/run/docker.sock:ro
+#      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+#      - ./logs:/logs:ro # mount logs, read-only
+#      - ./data/filebeat:/usr/share/filebeat/data   # persist registry
+#    depends_on:
+#      - elasticsearch
+#      - logstash
+#    networks:
+#      - elk-network
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: [ "--config=/etc/otel-collector.yaml" ]
     volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-      - ./logs:/logs:ro # mount logs, read-only
-      - ./data/filebeat:/usr/share/filebeat/data   # persist registry
+      - ./otel/otel-collector.yaml:/etc/otel-collector.yaml
+    ports:
+      - "4317:4317"
     depends_on:
       - elasticsearch
-      - logstash
+    networks:
+      - elk-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+    #      - "4317:4317"
+    #      - "4318:4318"
+    #      - "6831:6831/udp"
+    #      - "6832:6832/udp"
+    networks:
+      - elk-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - elk-network
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./grafana/tempo.yaml:/etc/tempo.yaml
+    networks:
+      - elk-network
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./grafana/loki.yaml:/etc/loki/local-config.yaml
     networks:
       - elk-network
 

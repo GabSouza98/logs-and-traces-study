@@ -88,6 +88,27 @@
 			<artifactId>logback-ecs-encoder</artifactId>
 			<version>1.7.0</version> <!-- Use the latest version -->
 		</dependency>
+
+		<!-- OpenTelemetry API -->
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-api</artifactId>
+			<version>1.57.0</version>
+		</dependency>
+
+		<!-- OpenTelemetry SDK -->
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-sdk</artifactId>
+			<version>1.57.0</version>
+		</dependency>
+
+		<!-- OTLP Exporter -->
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-exporter-otlp</artifactId>
+			<version>1.57.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -10,7 +10,9 @@ server:
 
 services:
   serviceB: http://service-b:8080/v1/trace-service-b
+#  serviceB: http://localhost:8081/v1/trace-service-b
   serviceC: http://service-c:8080/v1/trace-service-c
+#  serviceC: http://localhost:8082/v1/trace-service-c
 
 #logging:
 #  logstash:
